@@ -1,5 +1,0 @@
-Method received : "initialize"
-Method received : "initialized"
-Method received : "workspace/didChangeConfiguration"
-Unhandled message: workspace/didChangeConfiguration
-{"jsonrpc":"2.0","method":"workspace/didChangeConfiguration","params":{"settings":{}}}
