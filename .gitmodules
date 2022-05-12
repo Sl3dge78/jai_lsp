@@ -1,0 +1,6 @@
+[submodule "jason"]
+	path = jason
+	url = https://github.com/rluba/jason.git
+[submodule "jai-unicode"]
+	path = jai-unicode
+	url = https://github.com/rluba/jai-unicode.git

@@ -1,15 +1,21 @@
 
 
 LSP_Message :: struct {
-    jsonrpc : string;
+    jsonrpc : string = "2.0";
 }
 
 LSP_Notification :: struct {
-    using LSP_Message;
+    using base : LSP_Message;
 }
 
 LSP_Request :: struct {
-    using LSP_Message;
+    using base : LSP_Message;
+    id : u32;
+    method : string;
+}
+
+LSP_Answer :: struct {
+    using base : LSP_Message;
     id : u32;
 }
 
@@ -18,8 +24,37 @@ Position :: struct {
     character : s32;
 }
 
-DefinitionRequest :: struct {
-    using LSP_Request;
+LSP_Location :: struct {
+    uri : string;
+    range : struct {
+        start : Position;
+        end : Position;
+    };
+}
+
+LSP_Request_Initialize :: struct {
+    using request : LSP_Request;
+    params : struct {
+        clientInfo : struct {
+            name : string;
+            version : string;
+        };
+    }
+}
+
+LSP_Result_Initialize :: struct {
+    capabilities : struct {
+        definitionProvider : bool = true;
+    };
+    serverInfo : struct {
+        name : string = "jai_lsp";
+        version : string = VERSION;
+    };
+    
+}
+
+LSP_Request_Definition :: struct {
+    using request : LSP_Request;
     params : struct {
         textDocument : struct {
             uri : string;
@@ -28,53 +63,3 @@ DefinitionRequest :: struct {
     };
 }
 
-on_definition_request :: (str : string) {
-    definition_req, success := json_parse_string(str, DefinitionRequest);
-    if !success {
-        print("Error: Unable to parse the message as a definition request\n");
-    }
-    
-    print("Requesting token at in file %:%,%\n", definition_req.params.textDocument.uri, definition_req.params.position.line, definition_req.params.position.character);
-    file_path := slice(definition_req.params.textDocument.uri, 7, definition_req.params.textDocument.uri.count - 7);
-    position := definition_req.params.position;
-    print(file_path);
-    print("file : %, pos : %\n", file_path, position);
-
-    // Let's try building the file!
-    w := compiler_create_workspace();
-    options := get_build_options();
-    options.output_type = .NO_OUTPUT;
-    set_build_options(options, w);
-
-    compiler_begin_intercept(w);
-    add_build_file(file_path, w);
-    while true {
-        msg := compiler_wait_for_message();
-
-        if !msg continue;
-        if msg.kind == .COMPLETE {
-            print("Compilation ended");
-            break;
-        }
-
-        if msg.kind == .TYPECHECKED {
-            tc := cast(*Message_Typechecked) msg;
-            for tc.all {
-                if position.line + 1 >= it.expression.location.l0 && position.line + 1 <= it.expression.location.l1 {
-                    if position.character + 1>= it.expression.location.c0 && position.character + 1<= it.expression.location.c1 {
-                        print("Found definition matching : %", it.expression.kind);
-                        if it.expression.kind == {
-                            case .IDENT;
-                                ident := cast(*Code_Ident) it.expression;
-                                decl := ident.resolved_declaration;
-                                loc := decl.expression.location;
-                                print("decl is at %:%:%", loc.enclosing_load.fully_pathed_filename, loc.l0, loc.c0);
-                        };
-
-                    }   
-                }
-            }
-        }
-    }
-    compiler_end_intercept(w);
-}

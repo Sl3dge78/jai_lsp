@@ -1,17 +1,28 @@
 #import "Basic";
-posix :: #import "POSIX";
 #import "File";
 #import "jason";
 #import "Window_Creation";
 #import "Hash_Table";
 #import "String";
 #import "Compiler";
-// #import "Runtime_Support";
+
+/*
+#if (OS == .LINUX) {
+    #load "linux.jai";    
+}
+*/
+
+#if (OS == .WINDOWS) {
+    #load "windows.jai";  
+}
 
 #load "request_types.jai";
-
+#load "messages.jai";
 
 VERSION :: "0.0.1";
+
+// --------
+// Logging
 
 client_log :: (message : string, data : *void, info : Log_Info) {
     log := tprint("{\"jsonrpc\":\"2.0\",\"method\":\"window/logMessage\",\"params\":{\"type\":3,\"message\":\"%\"}}", message);
@@ -19,144 +30,111 @@ client_log :: (message : string, data : *void, info : Log_Info) {
     write_string(write);
 }
 
-file_log :: (message : string, data :*void, info :Log_Info) {
-    file := file_open("/tmp/jai-lsp.log", true, true);
+file_logger :: (message : string, data :*void, info : Log_Info) {
+    if (info.common_flags & .VERBOSE_ONLY && context.log_level < .VERBOSE) return;
+    if (info.common_flags & .VERY_VERBOSE_ONLY && context.log_level < .VERY_VERBOSE) return;
+
+    file := file_open(TMP_FILE_PATH, true, keep_existing_content = true);
+    file_set_position(file, file_length(file));
+
+    if info.common_flags == { 
+        case .ERROR;
+            file_write(*file, "ERROR: ");
+        case .WARNING;
+            file_write(*file, "WARNING: ");
+        case;
+            file_write(*file, "INFO: ");
+    } 
+
     file_write(*file, message);
     file_close(*file);
 }
 
+init_logger :: () {
+    file := file_open(TMP_FILE_PATH, true, keep_existing_content = false); // Create or empty logging file
+    file_close(*file);
+    context.logger = file_logger;
+}
+
+log_verbose :: (format_string: string, args : ..Any) {
+    log(format_string, ..args, flags = .VERBOSE_ONLY);
+}
+
+// --------
+// Communication
+
 send_message :: (message: string) {
-    write := tprint("Content-Length: %\r\n\r\n%", message.count, message);
-    write_string(write);
-    log("Reply sent : %\n", write);
+    write_string(message);
+    log_verbose("Message sent: %\n", message);
 }
 
-message_received :: (message_str : string) {
-    message_json, success := json_parse_string(message_str);
+handle_message :: (body : string) -> success : bool #must {
+    request, success := json_parse_string(body, LSP_Request);
     if !success {
-        log("Unable to parse as json:\n%\n\n", message_str);
-        return;
+        log_error("Unable to parse as json:\n%\n\n", body);
+        return false;
     }
-
-    value, ok := table_find(message_json.object, "method"); 
-    if (!ok) {
-        log("'method' wasn't in the message\n%\n\n", message_str);
-        return;
+    log("Method : \"%\"\n", request.method);
+    if request.method == {
+        case "initialize";
+            return on_initialize(body);
+        case "initialized";
+            return on_initialized(body);
+        case "shutdown";
+            return on_shutdown(body);
+        case "textDocument/definition";
+            return on_definition_request(body);
+        case;
+            log("Unhandled method: %\n", request.method, body, flags = .WARNING);
+            return true;
     }
-
-    if(value.type == .STRING) {
-        log("Method received : \"%\"\n", value.str);
-        if value.str == {
-            case "initialize";
-                on_initialize(message_json);
-            case "initialized";
-                on_initialized(message_str);
-                
-            case "shutdown";
-                on_shutdown(message_json);
-            
-            case "textDocument/definition";
-                on_definition_request(message_str);
-            case;
-                log("Unhandled message: %\n%s\n", value.str, message_str);
-        }
-    }
+     
 }
 
-on_initialize :: (json : JSON_Value) {
-    // Parse message received for the id
-    // @Incomplete: read the capabilities?
-    id_obj, ok := table_find(json.object, "id");
-    if !ok {
-        log("Unable to find key id in request\n");
-        return;
+
+parse_header :: (header : string) -> s32, success : bool{
+    split_header := split(header, ": ");
+    if split_header[0] != "Content-Length" {
+        log_error("Expected length message, got:\n%\n", split_header[0]);
+        return 0, false;
     }
-    id : string;
-    if id_obj.type == {
-        case .NUMBER;
-            id = tprint("%", id_obj.number);
-        case .STRING;
-            id = tprint("%", id_obj.str);
-    }
-   
-    // Now write our reply
-    // @Cleanup: this is messy
-    part_1 :: #string JSON
-{"jsonrpc":"2.0","id":
-JSON;
 
-    part_2 :: #string JSON
-,"result":{"capabilities": {"definitionProvider":true},"serverInfo":{"name":"jai_lsp","version":"
-JSON;
-
-    part_3 :: #string JSON
-"}}}
-JSON;
-
-    builder : String_Builder;
-    init_string_builder(*builder);
-    defer free_buffers(*builder);
-
-    append(*builder, part_1);
-    append(*builder, id);
-    append(*builder, part_2);
-    append(*builder, VERSION);
-    append(*builder, part_3);
-
-    result := builder_to_string(*builder);
-    defer free(result);
-
-    send_message(result);
-}
-
-on_initialized :: (message : string) {
-    //context.logger = client_log;
-    log("jai-lsp - v%\n", VERSION);    
-}
-
-on_shutdown :: (json : JSON_Value) {
-    shutdown_received = true;
+    nb_bytes, success := parse_int(*split_header[1], s32);
+    return nb_bytes, success;
 }
 
 shutdown_received := false;
 
-main :: () {
-    file := file_open("/tmp/jai-lsp.log", true, false); // Create / empty logging file
-    file_close(*file);
-
-    context.logger = file_log;
+server_main :: () {
+    context.log_level = .VERBOSE;
+    init_logger();
     log("Jai lsp starting up\n");
 
     should_quit := false;
     while !should_quit {
         reset_temporary_storage();
+        
+        log_verbose("====\n");
+        body, success := wait_for_message();
 
-        // Read length
-        buffer : [1024] u8;
-        bytes_read := posix.read(posix.STDIN_FILENO, buffer.data, buffer.count - 1);
-        str := to_string(buffer.data, bytes_read);
-        split_msg := split(str, ":");
-        log("Msg received : %\new_flags", str);
-        if split_msg[0] != "Content-Length" {
-            log("Expected length message, got:\n%\n", split_msg[0]);
-            break;
-        }
-
-        nb_bytes, success := parse_int(*split_msg[1], u32);
         if !success {
-            log("Unable to parse string as int: %\n", split_msg[1]);
+            log_error("Error while reading message\n");
             break;
         }
 
-        req_buffer := talloc(nb_bytes);
-        bytes_read = posix.read(posix.STDIN_FILENO, req_buffer, nb_bytes);
-        assert(bytes_read == nb_bytes);
-
-        req_str := to_string(req_buffer, bytes_read);
-        log("Msg received : %\n", req_str);
-
-        message_received(req_str);
+        success = handle_message(body);
+        if !success {
+            log_error("Error while handling message\n");
+            break;
+        }
     }
+    log("Shutting down\n");
 }
 
+repl_main :: () {
+    
+}
 
+main :: () {
+    server_main();
+}
