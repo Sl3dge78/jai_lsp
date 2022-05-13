@@ -1,4 +1,20 @@
 
+send_empty_lsp_result :: (id : u32) -> success : bool {
+    Full_Reply :: struct {
+        using request : LSP_Answer;
+        result : *void;
+    };
+
+    built : Full_Reply;
+    built.id = id;
+    built.result = null;
+
+    body := json_write_string(built, indent_char = "", line_ending = "");
+    log_verbose("Reply: %\n", body);
+    print("Content-Length: %\r\n\r\n%", body.count, body);
+    return true;
+}
+
 send_lsp_result :: (id : u32, object : $T) -> success : bool {
     Full_Reply :: struct {
         using request : LSP_Answer;
@@ -45,16 +61,34 @@ on_definition_request :: (str : string) -> bool {
     position := definition_req.params.position;
     
     // Now we need to compile the project with our metaprogram plugin so that we can fetch the definition through its stdout.
-    // jai -plug lsp_plugin -locate D:/_Guigui/__bordel/__/jai-lsp-vscode/test_project/main.jai 10 20 D:/_Guigui/__bordel/__/jai-lsp-vscode/test_project/main.jai --- import_dir ./
+    // jai -plug lsp_plugin -locate D:/jai-lsp-vscode/test_project/main.jai 10 20 D:/jai-lsp-vscode/test_project/main.jai --- import_dir ./
+    // @TODO : Use the position and file given
+    // @TODO : Try with a build metaprogram
+    command := tprint("-locate % % %", file_path, position.line + 1, position.character + 1);
+    log("%\n", command);
+    compile_result := start_compilation(command);
 
-    // Let's return a bogus value for now
     result_location : LSP_Location;
-    result_location.uri = definition_req.params.textDocument.uri;
-    result_location.range.start.line = 10;
-    result_location.range.start.character = 0;
-    result_location.range.end.line = 10;
-    result_location.range.end.character = 2;
-    send_lsp_result(definition_req.id, result_location);
 
+    splitted := split(compile_result, "\n");
+    if splitted[0] != "COMPILE_OK" {
+        loc := split(splitted[0], ":");
+        if loc[0] == "OK" {
+            result_location.uri = tprint("file://%", loc[1]);
+            result_location.range.start.line = xx (parse_int(*loc[2])  - 1);
+            result_location.range.start.character = xx (parse_int(*loc[3]) - 1);
+            result_location.range.end = result_location.range.start;
+        } else {
+            send_empty_lsp_result(definition_req.id);
+            log("%\n", compile_result);
+            return true;
+        }
+    } else {
+        send_empty_lsp_result(definition_req.id);
+        log("%\n", compile_result);
+        return true;
+    }
+
+    send_lsp_result(definition_req.id, result_location);
     return true;
 }

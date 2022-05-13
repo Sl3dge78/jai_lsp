@@ -3,14 +3,15 @@
     // Hover to view descriptions of existing attributes.
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
-    "configurations": [
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug",
-            "program": "${workspaceFolder}/bin/jai_lsp.exe",
-            "args": [],
-            "cwd": "${workspaceFolder}/bin"
-        }
-    ]
+    "linux": {
+        "configurations": [
+            {
+                "type": "gdb",
+                "request": "launch",
+                "name": "Debug",
+                "target": "${workspaceFolder}/bin/jai_lsp",
+                "cwd": "${workspaceFolder}/bin"
+            }
+        ]
+    }
 }

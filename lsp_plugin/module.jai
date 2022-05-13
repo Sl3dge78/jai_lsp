@@ -27,13 +27,17 @@ before_intercept :: (p: *Metaprogram_Plugin) {
 }
 
 check_location :: (file: string, line : int, char : int, location : Code_Node.Location) -> bool {
-    if !location.enclosing_load return false;
+    if !location.enclosing_load {
+        return false;
+    }
 
     loc_file := location.enclosing_load.fully_pathed_filename;
-
+    
     if(file == loc_file) {
+        // print("%:%:%\n", loc_file, location.l0, location.c0);
         if line >= location.l0 && line <= location.l1 {
             if col >= location.c0 && col <= location.c1 {
+                // print("%:%:%\n", loc_file, location.l0, location.c0);
                 return true;
             }
         }
@@ -47,6 +51,7 @@ message :: (p: *Metaprogram_Plugin, message: *Message) {
         tc := cast(*Message_Typechecked) message;
         
         for tc.all {
+            // print("EXPR: % - %\n", it.expression.kind, it.expression.location.enclosing_load.fully_pathed_filename);
             for sub_expr : it.subexpressions {
                 if check_location(file, line, col, sub_expr.location) {
                     // print("Found match.\nKind:%\n", sub_expr.kind);
@@ -68,12 +73,11 @@ message :: (p: *Metaprogram_Plugin, message: *Message) {
         complete := cast(*Message_Complete) message;
         if complete.error_code == {
             case .NONE;
-                print("COMPILE_OK");
+                print("COMPILE_OK\n");
             case;
-                print("COMPILE_NOK");
+                print("COMPILE_NOK\n");
         };
     }
-
 } 
 
 handle_one_option :: (p: *Metaprogram_Plugin, options : []string, cursor: int) -> new_cursort: int {
@@ -92,6 +96,7 @@ handle_one_option :: (p: *Metaprogram_Plugin, options : []string, cursor: int) -
                 print("ERROR:Couldn't parse column.");
                 return cursor;
             }
+            // print("SEARCHING: %:%:%\n", file, line, col);
             return cursor + 4;
     };
 

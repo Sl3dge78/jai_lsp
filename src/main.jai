@@ -6,11 +6,11 @@
 #import "String";
 #import "Compiler";
 
-/*
+
 #if (OS == .LINUX) {
     #load "linux.jai";    
 }
-*/
+
 
 #if (OS == .WINDOWS) {
     #load "windows.jai";  
@@ -61,10 +61,8 @@ handle_message :: (body : string) -> success : bool #must {
         case;
             log("Unhandled method: %\n", request.method, body, flags = .WARNING);
             return true;
-    }
-     
+    }    
 }
-
 
 parse_header :: (header : string) -> s32, success : bool{
     split_header := split(header, ": ");
@@ -103,4 +101,8 @@ main :: () {
         }
     }
     log("Shutting down\n");
+}
+
+main2 :: () {
+    compile := start_compilation("-locate /home/sl3dge/work/prog/jai-lsp-vscode/test_project/main.jai 8 14");
 }
