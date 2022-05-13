@@ -4,8 +4,7 @@ kernel32 :: #foreign_system_library "kernel32";
 
 ReadConsoleA :: (hConsoleHandle: win32.HANDLE, buff : *u8, chars_to_read : s32, chars_read : *s32, lpInputControl := *void) -> win32.BOOL #foreign kernel32;
 
-TMP_FILE_PATH :: "D:\\jai-lsp.log";
-
+LOGGING_FILE_PATH :: "D:\\jai-lsp.log";
 
 file_read_line :: (f : File, buffer : [] u8) -> s32 {
     total_read: s32;
