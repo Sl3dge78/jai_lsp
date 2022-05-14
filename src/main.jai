@@ -19,9 +19,12 @@
 #load "logging.jai";
 
 VERSION :: "0.0.1";
+
+// --------
+// Compiling target program
+
 PLUGIN_SEARCH_PATH : string;
 HAS_METAPROGRAM := true;
-
 INNER_INIT_FUNC :: #string JAI
 #import \"Metaprogram_Plugins\";
 init_lsp :: (workspace : Workspace) -> *Metaprogram_Plugin {
@@ -43,6 +46,21 @@ init_lsp :: (workspace : Workspace) -> *Metaprogram_Plugin {
     return lsp;
 }
 JAI;
+
+start_compilation :: (request : string) -> string {
+    // @Hardcoded: find a way to specify the build file.
+    build_file := "/home/sl3dge/work/prog/jai-lsp-vscode/test_project/build.jai";
+    
+    command : string;
+    if !HAS_METAPROGRAM { // Target project has no metaprogram
+        command = tprint("jai -plug lsp_plugin % % --- import_dir %", request, build_file, PLUGIN_SEARCH_PATH);
+    } else {
+        command = tprint("jai % -add \"%\" -- lsp_plugin % --- import_dir %", build_file, INNER_INIT_FUNC, request, PLUGIN_SEARCH_PATH);
+    }
+    log_verbose("Starting compilation : %\n", command);
+        
+    return start_command_and_get_output(command);
+}
 
 // --------
 // Logging

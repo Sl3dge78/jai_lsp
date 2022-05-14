@@ -43,18 +43,7 @@ wait_for_message :: () -> string, success : bool {
     return body, true;
 }
 
-start_compilation :: (request : string) -> string {
-    // @Hardcoded: find a way to specify the build file.
-    build_file := "/home/sl3dge/work/prog/jai-lsp-vscode/test_project/build.jai";
-    
-    command : string;
-    if !HAS_METAPROGRAM { // Target project has no metaprogram
-        command = tprint("jai -plug lsp_plugin % % --- import_dir %", request, build_file, PLUGIN_SEARCH_PATH);
-    } else {
-        command = tprint("jai % -add \"%\" -- lsp_plugin % --- import_dir %", build_file, INNER_INIT_FUNC, request, PLUGIN_SEARCH_PATH);
-    }
-    log_verbose("Starting compilation : %\n", command);
-
+start_command_and_get_output :: (command : string) -> string {
     c_str := to_c_string(command);
     defer free(c_str);
 
@@ -65,7 +54,5 @@ start_compilation :: (request : string) -> string {
     output_string.count = xx nb_read;
     log_verbose("%\n", output_string);    
     posix.pclose(handle);
-        
-    log_verbose("%", output_string);
     return copy_temporary_string(output_string);
 }
