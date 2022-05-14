@@ -45,19 +45,27 @@ wait_for_message :: () -> string, success : bool {
 
 start_compilation :: (request : string) -> string {
     // @Hardcoded: find a way to specify the build file.
+    build_file := "/home/sl3dge/work/prog/jai-lsp-vscode/test_project/build.jai";
+    
+    command : string;
+    if !HAS_METAPROGRAM { // Target project has no metaprogram
+        command = tprint("jai -plug lsp_plugin % % --- import_dir %", request, build_file, PLUGIN_SEARCH_PATH);
+    } else {
+        command = tprint("jai % -add \"%\" -- lsp_plugin % --- import_dir %", build_file, INNER_INIT_FUNC, request, PLUGIN_SEARCH_PATH);
+    }
+    log_verbose("Starting compilation : %\n", command);
 
-    command := tprint("jai -plug lsp_plugin % /home/sl3dge/work/prog/jai-lsp-vscode/test_project/build.jai --- import_dir %", request, PLUGIN_SEARCH_PATH);
-    log("Starting compilation : %\n", command);
     c_str := to_c_string(command);
     defer free(c_str);
 
     handle := posix.popen(c_str, "r");
     buffer : [1024] u8;
     nb_read := posix.fread(buffer.data, 1, buffer.count, handle); // Read as much as we can until process closes
-    as_str := to_string(buffer);
-    as_str.count = xx nb_read;
-    log_verbose("%\n", as_str);    
+    output_string := to_string(buffer);
+    output_string.count = xx nb_read;
+    log_verbose("%\n", output_string);    
     posix.pclose(handle);
-
-    return copy_temporary_string(as_str);
+        
+    log_verbose("%", output_string);
+    return copy_temporary_string(output_string);
 }

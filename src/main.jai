@@ -1,17 +1,13 @@
 #import "Basic";
-#import "File";
 #import "jason";
-#import "Window_Creation";
-#import "Hash_Table";
 #import "String";
-#import "Compiler";
 #import "System";
+#import "Process";
 #import "File_Utilities";
 
 #if (OS == .LINUX) {
     #load "linux.jai";    
 }
-
 
 #if (OS == .WINDOWS) {
     #load "windows.jai";  
@@ -22,9 +18,31 @@
 
 #load "logging.jai";
 
-
 VERSION :: "0.0.1";
 PLUGIN_SEARCH_PATH : string;
+HAS_METAPROGRAM := true;
+
+INNER_INIT_FUNC :: #string JAI
+#import \"Metaprogram_Plugins\";
+init_lsp :: (workspace : Workspace) -> *Metaprogram_Plugin {
+    plugin_names := string.[\"lsp_plugin\"];
+    plugins : [..] *Metaprogram_Plugin;
+    init_plugins(plugin_names, *plugins, workspace);
+    lsp := plugins[0];
+    lsp.before_intercept(lsp);
+
+    options := get_build_options();
+    args := options.compile_time_command_line;
+    for args {
+        if it == \"lsp_plugin\" {
+            lsp.handle_one_option(lsp, args, it_index + 1);
+            break;
+        }
+    }
+
+    return lsp;
+}
+JAI;
 
 // --------
 // Logging
@@ -79,12 +97,13 @@ parse_header :: (header : string) -> s32, success : bool{
 
 shutdown_received := false;
 
-main1 :: () {
+main :: () {
     context.log_level = .VERBOSE;
     init_logger();
     our_path := parse_path(get_path_of_running_executable());
     PLUGIN_SEARCH_PATH = path_to_string(our_path, our_path.words.count - 1);
     defer free(PLUGIN_SEARCH_PATH);
+    HAS_METAPROGRAM = true;
 
     log("Jai lsp starting up\n");
 
@@ -109,8 +128,8 @@ main1 :: () {
     log("Shutting down\n");
 }
 
-main :: () {
+main1 :: () {
     our_path := parse_path(get_path_of_running_executable());
     PLUGIN_SEARCH_PATH = path_to_string(our_path, our_path.words.count - 1);
-    compile := start_compilation("-locate D:/Guigui/Work/Prog/jai-lsp-vscode/test_project/main.jai 8 12");
+    compile := start_compilation("-locate /home/sl3dge/work/prog/jai-lsp-vscode/test_project/main.jai 8 12");
 }

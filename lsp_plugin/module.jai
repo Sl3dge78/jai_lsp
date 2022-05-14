@@ -22,7 +22,7 @@ get_plugin :: () -> *Metaprogram_Plugin {
 before_intercept :: (p: *Metaprogram_Plugin) {
     options := get_build_options(p.workspace);
     options.output_type = .NO_OUTPUT;
-    //options.text_output_flags = 0;
+    options.text_output_flags = 0;
     set_build_options(options, p.workspace);
 }
 
@@ -81,12 +81,12 @@ message :: (p: *Metaprogram_Plugin, message: *Message) {
     }
 } 
 
-handle_one_option :: (p: *Metaprogram_Plugin, options : []string, cursor: int) -> new_cursort: int {
+handle_one_option :: (p: *Metaprogram_Plugin, options : []string, cursor: int) -> new_cursor: int {
     s := options[cursor];
     if s == {
         case "-locate";
             ok : bool;
-            file = String.replace(options[cursor + 1], "\\", "/");            
+            file = options[cursor + 1];
             line, ok = String.parse_int(*options[cursor + 2]);
             if !ok {
                 print("ERROR:Couldn't parse line.");
@@ -97,7 +97,7 @@ handle_one_option :: (p: *Metaprogram_Plugin, options : []string, cursor: int) -
                 print("ERROR:Couldn't parse column.");
                 return cursor;
             }
-            // print("SEARCHING: %:%:%\n", file, line, col);
+            //print("SEARCHING: %:%:%\n", file, line, col);
             return cursor + 4;
     };
 

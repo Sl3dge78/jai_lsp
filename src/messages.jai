@@ -62,7 +62,6 @@ on_definition_request :: (str : string) -> bool {
     
     // Now we need to compile the project with our metaprogram plugin so that we can fetch the definition through its stdout.
     // jai -plug lsp_plugin -locate file_to_search_in.jai 10 20 file_to_compile.jai --- import_dir ./
-    // @TODO : Try with a build metaprogram
     command := tprint("-locate % % %", file_path, position.line + 1, position.character + 1);
     log("%\n", command);
     compile_result := start_compilation(command);

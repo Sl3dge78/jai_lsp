@@ -1,7 +1,7 @@
 
 win32 :: #import "Windows";
 kernel32 :: #foreign_system_library "kernel32";
-#import "Process";
+
 
 ReadConsoleA :: (hConsoleHandle: win32.HANDLE, buff : *u8, chars_to_read : s32, chars_read : *s32, lpInputControl := *void) -> win32.BOOL #foreign kernel32;
 
