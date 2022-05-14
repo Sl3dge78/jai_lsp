@@ -1,6 +1,7 @@
 
 win32 :: #import "Windows";
 kernel32 :: #foreign_system_library "kernel32";
+#import "Process";
 
 ReadConsoleA :: (hConsoleHandle: win32.HANDLE, buff : *u8, chars_to_read : s32, chars_read : *s32, lpInputControl := *void) -> win32.BOOL #foreign kernel32;
 
@@ -66,4 +67,16 @@ translate_uri :: (uri : string) -> string {
 
     sliced := slice(file_path, 8, file_path.count - 8);
     return copy_temporary_string(sliced);
+}
+
+start_compilation :: (request : string) -> string {
+    // @Hardcoded
+    build_file := "D:/Guigui/Work/Prog/jai-lsp-vscode/test_project/build.jai";
+    command := tprint("jai -plug lsp_plugin % % --- import_dir %", request, build_file, PLUGIN_SEARCH_PATH);
+    log("Starting compilation : %\n", command);
+    args := split(command, " ");
+    successfully_launched, exit_code, output_string := os_run_command(..args, capture_and_return_output = true);
+    defer free(output_string);
+    log("%", output_string);
+    return copy_temporary_string(output_string);
 }

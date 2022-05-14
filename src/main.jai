@@ -79,7 +79,7 @@ parse_header :: (header : string) -> s32, success : bool{
 
 shutdown_received := false;
 
-main :: () {
+main1 :: () {
     context.log_level = .VERBOSE;
     init_logger();
     our_path := parse_path(get_path_of_running_executable());
@@ -109,6 +109,8 @@ main :: () {
     log("Shutting down\n");
 }
 
-main2 :: () {
-    compile := start_compilation("-locate /home/sl3dge/work/prog/jai-lsp-vscode/test_project/main.jai 8 14");
+main :: () {
+    our_path := parse_path(get_path_of_running_executable());
+    PLUGIN_SEARCH_PATH = path_to_string(our_path, our_path.words.count - 1);
+    compile := start_compilation("-locate D:/Guigui/Work/Prog/jai-lsp-vscode/test_project/main.jai 8 12");
 }

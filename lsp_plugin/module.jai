@@ -21,7 +21,7 @@ get_plugin :: () -> *Metaprogram_Plugin {
 
 before_intercept :: (p: *Metaprogram_Plugin) {
     options := get_build_options(p.workspace);
-    //options.output_type = .NO_OUTPUT;
+    options.output_type = .NO_OUTPUT;
     //options.text_output_flags = 0;
     set_build_options(options, p.workspace);
 }
@@ -32,7 +32,7 @@ check_location :: (file: string, line : int, char : int, location : Code_Node.Lo
     }
 
     loc_file := location.enclosing_load.fully_pathed_filename;
-    
+    // print("%\n", loc_file);
     if(file == loc_file) {
         // print("%:%:%\n", loc_file, location.l0, location.c0);
         if line >= location.l0 && line <= location.l1 {
