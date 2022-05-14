@@ -5,7 +5,8 @@
 #import "Hash_Table";
 #import "String";
 #import "Compiler";
-
+#import "System";
+#import "File_Utilities";
 
 #if (OS == .LINUX) {
     #load "linux.jai";    
@@ -23,6 +24,7 @@
 
 
 VERSION :: "0.0.1";
+PLUGIN_SEARCH_PATH : string;
 
 // --------
 // Logging
@@ -80,6 +82,10 @@ shutdown_received := false;
 main :: () {
     context.log_level = .VERBOSE;
     init_logger();
+    our_path := parse_path(get_path_of_running_executable());
+    PLUGIN_SEARCH_PATH = path_to_string(our_path, our_path.words.count - 1);
+    defer free(PLUGIN_SEARCH_PATH);
+
     log("Jai lsp starting up\n");
 
     should_quit := false;

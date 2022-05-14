@@ -44,17 +44,20 @@ wait_for_message :: () -> string, success : bool {
 }
 
 start_compilation :: (request : string) -> string {
-    // @Hardcoded : Change the paths to be dynamic
-    command := tprint("jai -plug lsp_plugin % /home/sl3dge/work/prog/jai-lsp-vscode/test_project/main.jai --- import_dir /home/sl3dge/work/prog/jai_sandbox/", request);
+    // @Hardcoded: find a way to specify the build file.
+
+    command := tprint("jai -plug lsp_plugin % /home/sl3dge/work/prog/jai-lsp-vscode/test_project/build.jai --- import_dir %", request, PLUGIN_SEARCH_PATH);
     log("Starting compilation : %\n", command);
     c_str := to_c_string(command);
     defer free(c_str);
+
     handle := posix.popen(c_str, "r");
     buffer : [1024] u8;
-    nb_read := posix.fread(buffer.data, 1, buffer.count, handle);
+    nb_read := posix.fread(buffer.data, 1, buffer.count, handle); // Read as much as we can until process closes
     as_str := to_string(buffer);
     as_str.count = xx nb_read;
     log_verbose("%\n", as_str);    
     posix.pclose(handle);
+
     return copy_temporary_string(as_str);
 }

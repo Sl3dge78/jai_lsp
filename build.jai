@@ -10,7 +10,7 @@ build :: () {
 
     opt := get_build_options(); 
     opt.output_type = .EXECUTABLE;
-    opt.output_path = "bin/";
+    opt.output_path = "";
     opt.output_executable_name = "jai_lsp";
 
     file_path := parse_path(#filepath);
@@ -24,15 +24,4 @@ build :: () {
     set_build_options(opt, w);
 
     add_build_file("src/main.jai", w);
-
-    /*
-    compiler_begin_intercept(w);
-    while true {
-        msg := compiler_wait_for_message();
-
-        if !msg continue;
-        if msg.kind == .COMPLETE break;
-    }
-    compiler_end_intercept(w);
-    */
 }

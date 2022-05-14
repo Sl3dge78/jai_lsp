@@ -21,8 +21,8 @@ get_plugin :: () -> *Metaprogram_Plugin {
 
 before_intercept :: (p: *Metaprogram_Plugin) {
     options := get_build_options(p.workspace);
-    options.output_type = .NO_OUTPUT;
-    options.text_output_flags = 0;
+    //options.output_type = .NO_OUTPUT;
+    //options.text_output_flags = 0;
     set_build_options(options, p.workspace);
 }
 
@@ -56,6 +56,7 @@ message :: (p: *Metaprogram_Plugin, message: *Message) {
                 if check_location(file, line, col, sub_expr.location) {
                     // print("Found match.\nKind:%\n", sub_expr.kind);
                     if sub_expr.kind == {
+                        // @Todo: #import and #load should open the corresponding file.
                         case .IDENT;
                             ident := cast(*Code_Ident)sub_expr;
                             decl := ident.resolved_declaration;

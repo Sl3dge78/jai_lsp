@@ -61,8 +61,7 @@ on_definition_request :: (str : string) -> bool {
     position := definition_req.params.position;
     
     // Now we need to compile the project with our metaprogram plugin so that we can fetch the definition through its stdout.
-    // jai -plug lsp_plugin -locate D:/jai-lsp-vscode/test_project/main.jai 10 20 D:/jai-lsp-vscode/test_project/main.jai --- import_dir ./
-    // @TODO : Use the position and file given
+    // jai -plug lsp_plugin -locate file_to_search_in.jai 10 20 file_to_compile.jai --- import_dir ./
     // @TODO : Try with a build metaprogram
     command := tprint("-locate % % %", file_path, position.line + 1, position.character + 1);
     log("%\n", command);
