@@ -58,3 +58,5 @@ build :: () {
 ### Images
 
 ![goto](https://github.com/Sl3dge78/jai_lsp/blob/main/images/goto.gif?raw=true)
+
+Feel free to ping me on the secret beta discord: @Sl3dge
