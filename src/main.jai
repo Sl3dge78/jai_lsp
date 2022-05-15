@@ -42,7 +42,7 @@ get_definition_location :: (file_path : string, line : int, character : int) -> 
     command := tprint("-locate % % %", file_path, line, character);
     log_verbose("%\n", command);
     compile_result := start_compilation(command);
-    log_verbose("COMPILE: %\n", compile_result);
+    log_verbose("COMPILE:%\n", compile_result);
     
 
     lines := split(compile_result, "\n");
@@ -51,6 +51,7 @@ get_definition_location :: (file_path : string, line : int, character : int) -> 
         loc := split(it, "|");
         if loc[0] == {
             case "COMPILE_OK"; 
+                log_verbose("compile ok found");
                 log("Compilation completed without finding symbol.\n");
                 return false;
             case "COMPILE_NOK";
@@ -62,6 +63,12 @@ get_definition_location :: (file_path : string, line : int, character : int) -> 
                 return false;
             
             case "OK";
+                log_verbose("Ok found\n");
+                if loc.count < 6 {
+                    log_error("Not enough arguments!");
+                    return false;
+                }
+
                 uri := loc[1];
                 #if OS == .WINDOWS {
                     temp := replace(uri, ":/","%3A/");
@@ -71,6 +78,7 @@ get_definition_location :: (file_path : string, line : int, character : int) -> 
                 }
                 
                 if(loc[2] == "0" && loc[3] == "0" && loc[4] == "0" && loc[5] == "0") { // Basic types redirect to Preload.jai 0,0,0,0
+                log_verbose("Basic type\n");
                     return false, .{};
                 }
                 result_location : LSP_Location;
@@ -79,6 +87,7 @@ get_definition_location :: (file_path : string, line : int, character : int) -> 
                 result_location.range.start.character = xx (parse_int(*loc[3]) - 1);
                 result_location.range.end.line = xx (parse_int(*loc[4]) - 1);
                 result_location.range.end.character = xx (parse_int(*loc[5]) - 1);
+                log_verbose("Returning\n");
                 return true, result_location;
             case;
                 continue;
@@ -94,11 +103,10 @@ get_definition_location :: (file_path : string, line : int, character : int) -> 
 
 init_logger :: () {
     LOGGING_FILE_PATH = join(get_temp_path(), "jai_lsp.log");
-    file := file_open(LOGGING_FILE_PATH, true, keep_existing_content = false); // Create or empty logging file
-    file_close(*file);
+    //file := file_open(LOGGING_FILE_PATH, true, keep_existing_content = false); // Create or empty logging file
+    //file_close(*file);
     context.logger = file_logger;
 }
-
 
 // --------
 // Communication
@@ -195,9 +203,8 @@ main :: () {
 
 main2 :: () {
     context.log_level = .VERBOSE;
-    BUILD_FILE = "/home/sl3dge/work/prog/jai-lsp-vscode/test_project/build.jai";
+    BUILD_FILE = "build.jai";
     our_path := parse_path(get_path_of_running_executable());
     PLUGIN_SEARCH_PATH = path_to_string(our_path, our_path.words.count - 1);
-    compile := start_compilation("-locate /home/sl3dge/work/prog/jai-lsp-vscode/test_project/main.jai 8 12");
-    log_verbose("%\n", compile);
+    ok, loc := get_definition_location("/home/sl3dge/work/zelda/src/main.jai", 9, 37);
 }

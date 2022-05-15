@@ -90,6 +90,8 @@ parse_code_node :: (node : *Code_Node) {
             // We build the string manually instead.
             builder : String_Builder;
             append(*builder, "OK|");
+            append(*builder, decl.location.enclosing_load.fully_pathed_filename);
+            append(*builder, "|");
             print_integer(*builder, formatInt(l0, 10, 1, 0, ""));
             append(*builder, "|");
             print_integer(*builder, formatInt(c0, 10, 1, 0, ""));
@@ -97,8 +99,9 @@ parse_code_node :: (node : *Code_Node) {
             print_integer(*builder, formatInt(l1, 10, 1, 0, ""));
             append(*builder, "|");
             print_integer(*builder, formatInt(c1, 10, 1, 0, ""));
+            append(*builder, "\n");
             str := builder_to_string(*builder);
-            print("%\n", str);
+            write_string(str);
             
             found = true;
     };
@@ -134,10 +137,8 @@ default_metaprogram :: () {
             tc := cast(*Message_Typechecked) message;
 
             for tc.all {
-                // print("EXPR: % - %\n", it.expression.kind, it.expression.location.enclosing_load.fully_pathed_filename);
                 for sub_expr : it.subexpressions {
                     if check_location(file, line, col, sub_expr.location) {
-                        // print("Found match.\nKind:%\n", sub_expr.kind);
                         parse_code_node(sub_expr);
                         if found return;
                         break;
@@ -146,17 +147,18 @@ default_metaprogram :: () {
             }
         }
 
+        
         if message.kind == .COMPLETE {
             complete := cast(*Message_Complete) message;
             if complete.error_code == {
                 case .NONE;
-                    log("COMPILE_OK\n");
+                    print("COMPILE_OK\n");
                 case;
-                    log("COMPILE_NOK\n");
+                    print("COMPILE_NOK\n");
             };
-        }   
+        } 
+        
     }
-
     
     w := compiler_create_workspace("Target Program");
     if !w {
