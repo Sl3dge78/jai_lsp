@@ -3,7 +3,7 @@
 A basic LSP server for jai. 
 
 Checkout the clients:
-- (VSCode)[https://github.com/Sl3dge78/jai-lsp-vscode]
+- [VSCode](https://github.com/Sl3dge78/jai-lsp-vscode)
 
 ## USAGE
 - Tell your client to start the binary (```jai_lsp``` or ```jai_lsp.exe```)
@@ -46,6 +46,8 @@ build :: () {
     compiler_end_intercept(w);
 }
 ``` 
+
+### Status
 
 - [ ] Go to definition. 
     - [x] Variables, Types, Procedures.
