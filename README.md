@@ -3,7 +3,10 @@
 A basic LSP server for jai. 
 
 ## Usage
-If you are using a metaprogram, you need to call a function during your message loop. There will be a function pointer to it in the build options in `user_data_u64`. Here's its definition : ```lsp_message :: (message : *Message)```
+- Extract the released zip in a folder.
+- Tell your client to call the jai_lsp binary. If the binary is not in your path, you will need to provide the full path to the binary. You also nee to provide the file you build as an argument with `-build_file`. This path can be absolute or relative to the caller's working directory.
+Here's an example call : `jai_lsp -build_file ~/program/build.jai`. 
+- If you are using a metaprogram, you need to call a function during your message loop. There will be a function pointer to it in the build options in `user_data_u64`. Here's the function's definition : ```lsp_message :: (message : *Message)```
 Here's a full example:
 ``` 
 #run build();
@@ -48,7 +51,7 @@ Here's an example config file `:CocConfig`:
 {
     "languageserver": {
         "jai": {
-            "command" : "/home/sl3dge/work/prog/jai_sandbox/jai_lsp",
+            "command" : "/bin/jai_lsp",
                 "args": [
                     "-build_file",
                     "build.jai"
@@ -60,8 +63,7 @@ Here's an example config file `:CocConfig`:
 ```
 
 ### Other IDEs
-- Tell your client to call the jai_lsp binary and provide the file you build as an arguent with `-build_file`.
-Here's an example call : `jai_lsp -build_file ~/program/build.jai`. This path can be absolute or relative to the caller's working directory.
+
 
 ### Status
 
