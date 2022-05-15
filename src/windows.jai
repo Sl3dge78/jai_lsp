@@ -2,10 +2,17 @@
 win32 :: #import "Windows";
 kernel32 :: #foreign_system_library "kernel32";
 
-
 ReadConsoleA :: (hConsoleHandle: win32.HANDLE, buff : *u8, chars_to_read : s32, chars_read : *s32, lpInputControl := *void) -> win32.BOOL #foreign kernel32;
+GetTempPathA :: (nbufferLength: win32.DWORD, lpbuffer : *u8) -> win32.DWORD #foreign kernel32;
 
-LOGGING_FILE_PATH :: "D:\\jai-lsp.log";
+get_temp_path :: () -> string {
+    temp : string;
+    temp.count = 256;
+    temp.data = talloc(256);
+    size := GetTempPathA(xx temp.count, temp.data);
+    temp.count = size;
+    return temp; 
+}
 
 file_read_line :: (f : File, buffer : [] u8) -> s32 {
     total_read: s32;
@@ -67,12 +74,4 @@ translate_uri :: (uri : string) -> string {
 
     sliced := slice(file_path, 8, file_path.count - 8);
     return copy_temporary_string(sliced);
-}
-
-start_command_and_get_output :: (request : string) -> string {
-    args := split(command, " ");
-    successfully_launched, exit_code, output_string := os_run_command(..args, capture_and_return_output = true);
-    defer free(output_string);
-    log("%", output_string);
-    return copy_temporary_string(output_string);
 }

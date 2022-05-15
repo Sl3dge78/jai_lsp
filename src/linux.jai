@@ -1,6 +1,10 @@
 posix :: #import "POSIX";
 LOGGING_FILE_PATH :: "/tmp/jai-lsp.log";
 
+get_temp_path :: () -> string {
+    return "/tmp/"; 
+}
+
 stdin_read :: (buffer : []u8) -> s32 {
     return xx posix.read(posix.STDIN_FILENO, buffer.data, cast(u64) buffer.count);
 }
@@ -41,12 +45,4 @@ wait_for_message :: () -> string, success : bool {
     
     log_verbose("Body: %\n", body);
     return body, true;
-}
-
-start_command_and_get_output :: (command : string) -> string {   
-    args := split(command, " ");
-    successfully_launched, exit_code, output_string := os_run_command(..args, capture_and_return_output = true);
-    defer free(output_string);
-    log("%", output_string);
-    return copy_temporary_string(output_string);
 }

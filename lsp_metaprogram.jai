@@ -26,11 +26,11 @@ lsp_parse_args :: (options : []string, cursor: int) {
             file = options[cursor + 1];
             line, ok = String.parse_int(*options[cursor + 2]);
             if !ok {
-                print("ERROR:Couldn't parse line.");
+                print("ERROR|Couldn't parse line.");
             }
             col, ok = String.parse_int(*options[cursor + 3]);
             if !ok {
-                print("ERROR:Couldn't parse column.");
+                print("ERROR|Couldn't parse column.");
             }
             //print("SEARCHING: %:%:%\n", file, line, col);
     };
@@ -92,7 +92,7 @@ default_metaprogram :: () {
                             case .IDENT;
                                 ident := cast(*Code_Ident)sub_expr;
                                 decl := ident.resolved_declaration;
-                                print("OK:%:%:%\n", decl.location.enclosing_load.fully_pathed_filename, decl.location.l0, decl.location.c0);
+                                print("OK|%|%|%\n", decl.location.enclosing_load.fully_pathed_filename, decl.location.l0, decl.location.c0);
                                 //print("OK:%:%:%\n", "fefef", 12.3, "rrr");
                                 found = true;
                                 return;
