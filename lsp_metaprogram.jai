@@ -22,6 +22,7 @@ lsp_parse_args :: (options : []string, cursor: int) {
     s := options[cursor];
     if s == {
         case "-locate";
+            mode = .LOCATE;
             ok : bool;
             file = options[cursor + 1];
             line, ok = String.parse_int(*options[cursor + 2]);
@@ -32,7 +33,7 @@ lsp_parse_args :: (options : []string, cursor: int) {
             if !ok {
                 print("ERROR|Couldn't parse column.");
             }
-            //print("SEARCHING: %:%:%\n", file, line, col);
+            //log("SEARCHING%:%:%\n", file, line, col);
     };
 }
 
@@ -92,10 +93,32 @@ default_metaprogram :: () {
                             case .IDENT;
                                 ident := cast(*Code_Ident)sub_expr;
                                 decl := ident.resolved_declaration;
-                                print("OK|%|%|%\n", decl.location.enclosing_load.fully_pathed_filename, decl.location.l0, decl.location.c0);
-                                //print("OK:%:%:%\n", "fefef", 12.3, "rrr");
+                                l1 := decl.location.l1;
+                                c1 := decl.location.c1;
+                                log("Kind:%\n", decl.expression.kind);
+                                if decl.expression.kind == .PROCEDURE_HEADER {
+                                    proc := cast(*Code_Procedure_Header) decl.expression;
+                                    for proc.returns {
+                                        if it.location.l1 >= l1 {
+                                            l1 = it.location.l1;
+                                            c1 = it.location.c1;
+                                        }
+                                    }
+                                }
+                                if decl.expression.kind == .STRUCT {
+                                    structure := cast(*Code_Struct) decl.expression;
+                                    if structure.block.location.l1 >= l1 {
+                                        l1 = structure.block.location.l1;
+                                        c1 = structure.block.location.c1;
+                                    }
+                                    l1 += 1; // Closing brace @Hack
+                                }
+                                print("OK|%|%|%|%|%\n", decl.location.enclosing_load.fully_pathed_filename, decl.location.l0, decl.location.c0, l1, c1);
+                                
                                 found = true;
                                 return;
+                            case .IMPORT;
+                            
                         };
                         break;
                     }

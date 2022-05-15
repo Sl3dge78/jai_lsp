@@ -37,6 +37,56 @@ start_compilation :: (request : string) -> string {
     return copy_temporary_string(output_string);
 }
 
+get_definition_location :: (file_path : string, line : int, character : int) -> success : bool, loc : LSP_Location = .{} {
+    // Now we need to compile the project with our metaprogram so that we can fetch the definition through its stdout.
+    command := tprint("-locate % % %", file_path, line, character);
+    log_verbose("%\n", command);
+    compile_result := start_compilation(command);
+    log_verbose("COMPILE: %\n", compile_result);
+    
+
+    lines := split(compile_result, "\n");
+    index : int;
+    for lines {
+        loc := split(it, "|");
+        if loc[0] == {
+            case "COMPILE_OK"; #through;
+            case "COMPILE_NOK";
+                log("Compilation completed without finding symbol.\n");
+                return false;
+        
+            case "ERROR"; 
+                log_error("Compilation encountered an error %\n", it);
+                return false;
+            
+            case "OK";
+                uri := loc[1];
+                #if OS == .WINDOWS {
+                    temp := replace(uri, ":/","%3A/");
+                    defer free(temp);
+                    uri = join("/", temp);
+                    defer free(uri);
+                }
+                
+                if(loc[2] == "0" && loc[3] == "0" && loc[4] == "0" && loc[5] == "0") { // Basic types redirect to Preload.jai 0,0,0,0
+                    return false, .{};
+                }
+                result_location : LSP_Location;
+                result_location.uri = tprint("file://%", uri);
+                result_location.range.start.line = xx (parse_int(*loc[2])  - 1);
+                result_location.range.start.character = xx (parse_int(*loc[3]) - 1);
+                result_location.range.end.line = xx (parse_int(*loc[4]) - 1);
+                result_location.range.end.character = xx (parse_int(*loc[5]) - 1);
+                return true, result_location;
+            case;
+                continue;
+        }
+    }
+
+    log("Couldn't properly parse compilation result:\n%\n", compile_result);
+    return false;
+} 
+
 // --------
 // Logging
 
@@ -72,6 +122,8 @@ handle_message :: (body : string) -> success : bool #must {
             return on_shutdown(body);
         case "textDocument/definition";
             return on_definition_request(body);
+        case "textDocument/hover";
+            return on_hover(body);
         case;
             log("Unhandled method: %\n", request.method, body, flags = .WARNING);
             return true;
@@ -96,7 +148,6 @@ Arguments :: struct {
 }
 
 main :: () {
-    
     context.log_level = .VERBOSE;
     init_logger();
     our_path := parse_path(get_path_of_running_executable());
@@ -125,13 +176,13 @@ main :: () {
 
         if !success {
             log_error("Error while reading message\n");
-            break;
+            continue;
         }
 
         success = handle_message(body);
         if !success {
             log_error("Error while handling message\n");
-            break;
+            continue;
         }
         if(shutdown_received) break;
     }
@@ -139,10 +190,10 @@ main :: () {
 }
 
 main2 :: () {
-    LOGGING_FILE_PATH = get_temp_path();
-    log("%", LOGGING_FILE_PATH);
-
+    context.log_level = .VERBOSE;
+    BUILD_FILE = "/home/sl3dge/work/prog/jai-lsp-vscode/test_project/build.jai";
     our_path := parse_path(get_path_of_running_executable());
     PLUGIN_SEARCH_PATH = path_to_string(our_path, our_path.words.count - 1);
     compile := start_compilation("-locate /home/sl3dge/work/prog/jai-lsp-vscode/test_project/main.jai 8 12");
+    log_verbose("%\n", compile);
 }

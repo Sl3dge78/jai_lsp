@@ -59,52 +59,56 @@ on_definition_request :: (str : string) -> bool {
     
     file_path := translate_uri(definition_req.params.textDocument.uri);
     position := definition_req.params.position;
+
+    location_success, result_location := get_definition_location(file_path, position.line + 1, position.character + 1);
     
-    // Now we need to compile the project with our metaprogram plugin so that we can fetch the definition through its stdout.
-    // jai -plug lsp_plugin -locate file_to_search_in.jai 10 20 file_to_compile.jai --- import_dir ./
-    command := tprint("-locate % % %", file_path, position.line + 1, position.character + 1);
-    log_verbose("%\n", command);
-    compile_result := start_compilation(command);
-
-    result_location : LSP_Location;
-
-    lines := split(compile_result, "\n");
-    index : int;
-    for lines {
-        loc := split(it, "|");
-        if loc[0] == {
-            case "COMPILE_OK"; #through;
-            case "COMPILE_NOK";
-                log("Compilation completed without finding symbol.\n");
-                send_empty_lsp_result(definition_req.id);
-                return true;
-        
-            case "ERROR"; 
-                log_error("Compilation encountered an error %\n", it);
-                send_empty_lsp_result(definition_req.id);
-                return true;
-            
-            case "OK";
-                uri := loc[1];
-                #if OS == .WINDOWS {
-                    temp := replace(uri, ":/","%3A/");
-                    defer free(temp);
-                    uri = join("/", temp);
-                    defer free(uri);
-                }
-                
-                result_location.uri = tprint("file://%", uri);
-                result_location.range.start.line = xx (parse_int(*loc[2])  - 1);
-                result_location.range.start.character = xx (parse_int(*loc[3]) - 1);
-                result_location.range.end = result_location.range.start;
-                send_lsp_result(definition_req.id, result_location);
-                return true;
-            case;
-                continue;
-        }
+    if !location_success {
+        send_empty_lsp_result(definition_req.id);
+    } else {
+        send_lsp_result(definition_req.id, result_location);
     }
 
-    send_empty_lsp_result(definition_req.id);
-    log("Couldn't properly parse compilation result:\n%\n", compile_result);
+    return true;
+}
+
+on_hover :: (body : string) -> bool {
+    definition_req, success := json_parse_string(body, LSP_Request_Hover);
+
+    file_path := translate_uri(definition_req.params.textDocument.uri);
+    position := definition_req.params.position;
+
+    location_success, result_location := get_definition_location(file_path, position.line + 1, position.character + 1);
+    
+    if !location_success {
+        send_empty_lsp_result(definition_req.id);
+    } else {
+        l0 := result_location.range.start.line;
+        c0 := result_location.range.start.character;
+        l1 := result_location.range.end.line;
+        c1 := result_location.range.end.character;
+        path := translate_uri(result_location.uri);
+        log_verbose("%\n", path);
+        file := read_entire_file(path);
+        defer free(file);
+        lines := split(file, "\n");
+        builder : String_Builder;
+        defer free_buffers(*builder);
+        append(*builder, "```jai\n");
+        
+        line := l0;
+        while line <= l1 {           
+            if line == l0 && line == l1 then append(*builder, lines[line].data + c0, c1-c0);
+            else if line == l0          then append(*builder, lines[line].data + c0, lines[line].count - c0);
+            else if line == l1          then append(*builder, lines[line].data, c1);
+            else                             append(*builder, lines[line]);
+            append(*builder, "\n");
+            line += 1;
+        }
+        append(*builder, "```");
+        hover_string : LSP_Hover;
+        hover_string.contents = builder_to_string(*builder);
+        defer free(hover_string.contents);
+        send_lsp_result(definition_req.id, hover_string);
+    }
     return true;
 }
