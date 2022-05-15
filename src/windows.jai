@@ -69,11 +69,7 @@ translate_uri :: (uri : string) -> string {
     return copy_temporary_string(sliced);
 }
 
-start_compilation :: (request : string) -> string {
-    // @Hardcoded
-    build_file := "D:/Guigui/Work/Prog/jai-lsp-vscode/test_project/build.jai";
-    command := tprint("jai -plug lsp_plugin % % --- import_dir %", request, build_file, PLUGIN_SEARCH_PATH);
-    log("Starting compilation : %\n", command);
+start_command_and_get_output :: (request : string) -> string {
     args := split(command, " ");
     successfully_launched, exit_code, output_string := os_run_command(..args, capture_and_return_output = true);
     defer free(output_string);

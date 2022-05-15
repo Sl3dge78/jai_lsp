@@ -43,16 +43,10 @@ wait_for_message :: () -> string, success : bool {
     return body, true;
 }
 
-start_command_and_get_output :: (command : string) -> string {
-    c_str := to_c_string(command);
-    defer free(c_str);
-
-    handle := posix.popen(c_str, "r");
-    buffer : [1024] u8;
-    nb_read := posix.fread(buffer.data, 1, buffer.count, handle); // Read as much as we can until process closes
-    output_string := to_string(buffer);
-    output_string.count = xx nb_read;
-    log_verbose("%\n", output_string);    
-    posix.pclose(handle);
+start_command_and_get_output :: (command : string) -> string {   
+    args := split(command, " ");
+    successfully_launched, exit_code, output_string := os_run_command(..args, capture_and_return_output = true);
+    defer free(output_string);
+    log("%", output_string);
     return copy_temporary_string(output_string);
 }

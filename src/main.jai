@@ -4,6 +4,7 @@
 #import "System";
 #import "Process";
 #import "File_Utilities";
+Command_Line :: #import "Command_Line";
 
 #if (OS == .LINUX) {
     #load "linux.jai";    
@@ -24,41 +25,13 @@ VERSION :: "0.0.1";
 // Compiling target program
 
 PLUGIN_SEARCH_PATH : string;
-HAS_METAPROGRAM := true;
-INNER_INIT_FUNC :: #string JAI
-#import \"Metaprogram_Plugins\";
-init_lsp :: (workspace : Workspace) -> *Metaprogram_Plugin {
-    plugin_names := string.[\"lsp_plugin\"];
-    plugins : [..] *Metaprogram_Plugin;
-    init_plugins(plugin_names, *plugins, workspace);
-    lsp := plugins[0];
-    lsp.before_intercept(lsp);
+BUILD_FILE : string;
 
-    options := get_build_options();
-    args := options.compile_time_command_line;
-    for args {
-        if it == \"lsp_plugin\" {
-            lsp.handle_one_option(lsp, args, it_index + 1);
-            break;
-        }
-    }
-
-    return lsp;
-}
-JAI;
 
 start_compilation :: (request : string) -> string {
     // @Hardcoded: find a way to specify the build file.
-    build_file := "/home/sl3dge/work/prog/jai-lsp-vscode/test_project/build.jai";
-    
-    command : string;
-    if !HAS_METAPROGRAM { // Target project has no metaprogram
-        command = tprint("jai -plug lsp_plugin % % --- import_dir %", request, build_file, PLUGIN_SEARCH_PATH);
-    } else {
-        command = tprint("jai % -add \"%\" -- lsp_plugin % --- import_dir %", build_file, INNER_INIT_FUNC, request, PLUGIN_SEARCH_PATH);
-    }
+    command := tprint("jai % -- lsp_plugin % --- import_dir % meta lsp_metaprogram", BUILD_FILE, request, PLUGIN_SEARCH_PATH);
     log_verbose("Starting compilation : %\n", command);
-        
     return start_command_and_get_output(command);
 }
 
@@ -115,15 +88,30 @@ parse_header :: (header : string) -> s32, success : bool{
 
 shutdown_received := false;
 
+Arguments :: struct {
+    build_file : string; 
+}
+
 main :: () {
+    
     context.log_level = .VERBOSE;
     init_logger();
     our_path := parse_path(get_path_of_running_executable());
     PLUGIN_SEARCH_PATH = path_to_string(our_path, our_path.words.count - 1);
     defer free(PLUGIN_SEARCH_PATH);
-    HAS_METAPROGRAM = true;
+    
+    success, args, is_set := Command_Line.parse_arguments(Arguments);
+    if !success || !is_set.build_file {
+        print("Please provide a build file as argument");
+    }
+    
+    if is_absolute_path(args.build_file) {
+        BUILD_FILE = args.build_file;
+    } else {
+        BUILD_FILE = sprint("%/%", get_working_directory(), args.build_file);
+    }
 
-    log("Jai lsp starting up\n");
+    log("Jai lsp starting up in %\n", get_working_directory());
 
     should_quit := false;
     while !should_quit {
@@ -146,7 +134,8 @@ main :: () {
     log("Shutting down\n");
 }
 
-main1 :: () {
+main2 :: () {
+    
     our_path := parse_path(get_path_of_running_executable());
     PLUGIN_SEARCH_PATH = path_to_string(our_path, our_path.words.count - 1);
     compile := start_compilation("-locate /home/sl3dge/work/prog/jai-lsp-vscode/test_project/main.jai 8 12");
