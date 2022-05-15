@@ -3,12 +3,9 @@
 A basic LSP server for jai. 
 
 Checkout the clients:
-- [VSCode](https://github.com/Sl3dge78/jai-lsp-vscode)
 
 ## Usage
-- Tell your client to call the jai_lsp binary and provide the file you build as an arguent with `-build_file`.
-Here's an example call : `jai_lsp -build_file ~/program/build.jai`. This path can be absolute or relative to the caller's working directory.
-- If you are using a metaprogram, you need to call a function during your message loop. There will be a function pointer to it in the build options in user_data_u64. Here's its definition : ```lsp_message :: (message : *Message)```
+If you are using a metaprogram, you need to call a function during your message loop. There will be a function pointer to it in the build options in user_data_u64. Here's its definition : ```lsp_message :: (message : *Message)```
 Here's a full example:
 ``` 
 #run build();
@@ -43,6 +40,30 @@ build :: () {
     compiler_end_intercept(w);
 }
 ``` 
+
+### VSCode
+Please use the [accompanying extension](https://github.com/Sl3dge78/jai-lsp-vscode)  
+
+### VIM COC :
+Here's an example config file `:CocConfig`:
+```
+{
+    "languageserver": {
+        "jai": {
+            "command" : "/home/sl3dge/work/prog/jai_sandbox/jai_lsp",
+                "args": [
+                    "-build_file",
+                    "build.jai"
+                ],
+            "filetypes":["jai"]
+        }
+    }
+}
+```
+
+### Other IDEs
+- Tell your client to call the jai_lsp binary and provide the file you build as an arguent with `-build_file`.
+Here's an example call : `jai_lsp -build_file ~/program/build.jai`. This path can be absolute or relative to the caller's working directory.
 
 ### Status
 
