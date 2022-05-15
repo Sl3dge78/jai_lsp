@@ -19,7 +19,8 @@ Command_Line :: #import "Command_Line";
 
 #load "logging.jai";
 
-VERSION :: "0.1.0";
+VERSION :: "0.2.0";
+DEBUG :: false;
 
 // --------
 // Compiling target program
@@ -160,7 +161,10 @@ Arguments :: struct {
 }
 
 main :: () {
-    context.log_level = .VERBOSE;
+    if DEBUG {
+        context.log_level = .VERBOSE;
+    }
+
     init_logger();
     our_path := parse_path(get_path_of_running_executable());
     PLUGIN_SEARCH_PATH = path_to_string(our_path, our_path.words.count - 1);
