@@ -56,6 +56,54 @@ check_location :: (file: string, line : int, char : int, location : Code_Node.Lo
     return false;
 }
 
+parse_code_node :: (node : *Code_Node) {
+    if node.kind == {
+        // @Todo: #import and #load should open the corresponding file.
+        case .IDENT;
+            ident := cast(*Code_Ident)node;
+            decl := ident.resolved_declaration;
+            l0 := decl.location.l0;
+            c0 := decl.location.c0;
+
+            l1 := decl.location.l1;
+            c1 := decl.location.c1;
+            
+            if decl.expression.kind == .PROCEDURE_HEADER {
+                proc := cast(*Code_Procedure_Header) decl.expression;
+                for proc.returns {
+                    if it.location.l1 >= l1 {
+                        l1 = it.location.l1;
+                        c1 = it.location.c1;
+                    }
+                }
+            }
+            if decl.expression.kind == .STRUCT {
+                structure := cast(*Code_Struct) decl.expression;
+                if structure.block.location.l1 >= l1 {
+                    l1 = structure.block.location.l1;
+                    c1 = structure.block.location.c1;
+                }
+                l1 += 1; // Closing brace @Hack
+            }
+            // For some weird reason we can't call print with integers here.
+            // It causes an assertion, that hangs the program. 
+            // We build the string manually instead.
+            builder : String_Builder;
+            append(*builder, "OK|");
+            print_integer(*builder, formatInt(l0, 10, 1, 0, ""));
+            append(*builder, "|");
+            print_integer(*builder, formatInt(c0, 10, 1, 0, ""));
+            append(*builder, "|");
+            print_integer(*builder, formatInt(l1, 10, 1, 0, ""));
+            append(*builder, "|");
+            print_integer(*builder, formatInt(c1, 10, 1, 0, ""));
+            str := builder_to_string(*builder);
+            print("%\n", str);
+            
+            found = true;
+    };
+}
+
 // -------
 // DEFAULT_METAPROGRAM.JAI
 
@@ -78,6 +126,8 @@ is_absolute_path :: (path: string) -> bool { // This routine is probably not as 
 // 1. lsp_init    : before compiler_begin_intercept.
 // 2. lsp_message : during the message loop. 
 default_metaprogram :: () {
+    //print("");
+
     lsp_message :: (message : *Message) {
         if message.kind == .TYPECHECKED {
             if found return;
@@ -88,36 +138,8 @@ default_metaprogram :: () {
                 for sub_expr : it.subexpressions {
                     if check_location(file, line, col, sub_expr.location) {
                         // print("Found match.\nKind:%\n", sub_expr.kind);
-                        if sub_expr.kind == {
-                            // @Todo: #import and #load should open the corresponding file.
-                            case .IDENT;
-                                ident := cast(*Code_Ident)sub_expr;
-                                decl := ident.resolved_declaration;
-                                l1 := decl.location.l1;
-                                c1 := decl.location.c1;
-                                log("Kind:%\n", decl.expression.kind);
-                                if decl.expression.kind == .PROCEDURE_HEADER {
-                                    proc := cast(*Code_Procedure_Header) decl.expression;
-                                    for proc.returns {
-                                        if it.location.l1 >= l1 {
-                                            l1 = it.location.l1;
-                                            c1 = it.location.c1;
-                                        }
-                                    }
-                                }
-                                if decl.expression.kind == .STRUCT {
-                                    structure := cast(*Code_Struct) decl.expression;
-                                    if structure.block.location.l1 >= l1 {
-                                        l1 = structure.block.location.l1;
-                                        c1 = structure.block.location.c1;
-                                    }
-                                    l1 += 1; // Closing brace @Hack
-                                }
-                                print("OK|%|%|%|%|%\n", decl.location.enclosing_load.fully_pathed_filename, decl.location.l0, decl.location.c0, l1, c1);
-                                
-                                found = true;
-                                return;
-                        };
+                        parse_code_node(sub_expr);
+                        if found return;
                         break;
                     }
                 }

@@ -45,7 +45,7 @@ on_initialize :: (body_str : string) -> bool {
 }
 
 on_initialized :: (body : string) -> bool {
-    context.logger = client_log;
+    //context.logger = client_log;
     log("jai-lsp - v%\n", VERSION);    
     return true;
 }
