@@ -70,7 +70,7 @@ Here's an example config file `:CocConfig`:
 - [ ] Go to definition. 
     - [x] Variables, Types, Procedures.
     - [ ] #import
-- [ ] Hover support.
+- [x] Hover support.
 - [ ] Autocomplete.
     - [ ] Structs members.
     - [ ] Top level procedures.
