@@ -97,7 +97,7 @@ Arguments :: struct {
 
 main :: () {
     
-    // context.log_level = .VERBOSE;
+    context.log_level = .VERBOSE;
     init_logger();
     our_path := parse_path(get_path_of_running_executable());
     PLUGIN_SEARCH_PATH = path_to_string(our_path, our_path.words.count - 1);
@@ -133,6 +133,7 @@ main :: () {
             log_error("Error while handling message\n");
             break;
         }
+        if(shutdown_received) break;
     }
     log("Shutting down\n");
 }

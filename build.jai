@@ -21,7 +21,27 @@ build :: () {
     array_add(*import_path, ..opt.import_path);
     array_add(*import_path, path_string);
     opt.import_path = import_path;
+
+    lsp_message : (message : *Message);
+    is_lsp := false;
+    if opt.user_data_u64 {
+        lsp_message = << cast(*(*Message)) opt.user_data_u64;  
+        is_lsp = true;
+    }
+
     set_build_options(opt, w);
 
+    compiler_begin_intercept(w);
     add_build_file("src/main.jai", w);
+
+    while true {
+    msg := compiler_wait_for_message();
+        if !msg continue;
+        if msg.kind == .COMPLETE break;
+        
+        if is_lsp {
+            lsp_message(msg);
+        }
+    }
+    compiler_end_intercept(w);
 }

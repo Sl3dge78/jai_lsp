@@ -53,3 +53,8 @@ build :: () {
 - [ ] Autocomplete.
     - [ ] Structs members.
     - [ ] Top level procedures.
+
+
+### Images
+
+![goto](https://github.com/Sl3dge78/jai_lsp/blob/main/images/goto.gif?raw=true)
