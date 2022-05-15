@@ -19,6 +19,15 @@ LSP_Answer :: struct {
     id : u32;
 }
 
+LSP_LogMessage :: struct {
+    using notif: LSP_Notification;
+    method : string = "window/logMessage";
+    params : struct {
+        type : int;
+        message: string;
+    };
+}
+
 LSP_TextDocumentPosition :: struct {
     textDocument : struct {
         uri : string;

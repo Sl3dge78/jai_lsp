@@ -50,9 +50,11 @@ get_definition_location :: (file_path : string, line : int, character : int) -> 
     for lines {
         loc := split(it, "|");
         if loc[0] == {
-            case "COMPILE_OK"; #through;
-            case "COMPILE_NOK";
+            case "COMPILE_OK"; 
                 log("Compilation completed without finding symbol.\n");
+                return false;
+            case "COMPILE_NOK";
+                log("Compilation failed. Couldn't find symbol.\n");
                 return false;
         
             case "ERROR"; 
@@ -112,7 +114,7 @@ handle_message :: (body : string) -> success : bool #must {
         log_error("Unable to parse as json:\n%\n\n", body);
         return false;
     }
-    log("Method : \"%\"\n", request.method);
+    log("Request : \"%\"\n", request.method);
     if request.method == {
         case "initialize";
             return on_initialize(body);
@@ -124,6 +126,8 @@ handle_message :: (body : string) -> success : bool #must {
             return on_definition_request(body);
         case "textDocument/hover";
             return on_hover(body);
+        case "$/cancelRequest";
+            return true;
         case;
             log("Unhandled method: %\n", request.method, body, flags = .WARNING);
             return true;
@@ -148,7 +152,7 @@ Arguments :: struct {
 }
 
 main :: () {
-    context.log_level = .VERBOSE;
+    // context.log_level = .VERBOSE;
     init_logger();
     our_path := parse_path(get_path_of_running_executable());
     PLUGIN_SEARCH_PATH = path_to_string(our_path, our_path.words.count - 1);

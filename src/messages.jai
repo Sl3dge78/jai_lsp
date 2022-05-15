@@ -25,8 +25,12 @@ send_lsp_result :: (id : u32, object : $T) -> success : bool {
     built.id = id;
     built.result = object;
 
-    body := json_write_string(built, indent_char = "", line_ending = "");
-    log_verbose("Reply: %\n", body);
+    return lsp_send_object(built);
+}
+
+lsp_send_object :: (object : $T) -> success : bool {
+    body := json_write_string(object, indent_char = "", line_ending = "");
+    //log_verbose("Reply: %\n", body);
     print("Content-Length: %\r\n\r\n%", body.count, body);
     return true;
 }
@@ -41,7 +45,7 @@ on_initialize :: (body_str : string) -> bool {
 }
 
 on_initialized :: (body : string) -> bool {
-    //context.logger = client_log;
+    context.logger = client_log;
     log("jai-lsp - v%\n", VERSION);    
     return true;
 }

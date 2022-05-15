@@ -117,8 +117,6 @@ default_metaprogram :: () {
                                 
                                 found = true;
                                 return;
-                            case .IMPORT;
-                            
                         };
                         break;
                     }
