@@ -3,7 +3,7 @@
 A basic LSP server for jai. 
 
 ## Usage
-If you are using a metaprogram, you need to call a function during your message loop. There will be a function pointer to it in the build options in user_data_u64. Here's its definition : ```lsp_message :: (message : *Message)```
+If you are using a metaprogram, you need to call a function during your message loop. There will be a function pointer to it in the build options in `user_data_u64`. Here's its definition : ```lsp_message :: (message : *Message)```
 Here's a full example:
 ``` 
 #run build();
