@@ -5,9 +5,9 @@ A basic LSP server for jai.
 Checkout the clients:
 - [VSCode](https://github.com/Sl3dge78/jai-lsp-vscode)
 
-## USAGE
-- Tell your client to start the binary (```jai_lsp``` or ```jai_lsp.exe```)
-- You need to tell jai_lsp which file you are building with : 
+## Usage
+- Tell your client to call the jai_lsp binary and provide the file you build as an arguent with `-build_file`.
+Here's an example call : `jai_lsp -build_file ~/program/build.jai`. This path can be absolute or relative to the caller's working directory.
 - If you are using a metaprogram, you need to call a function during your message loop. There will be a function pointer to it in the build options in user_data_u64. This metaprogram is a copy paste of Default_Metaprogram.jai but with a few additions to hook into your build.
 Here's its definition :
 ```lsp_message :: (message : *Message)```
