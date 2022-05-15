@@ -1,5 +1,4 @@
 posix :: #import "POSIX";
-LOGGING_FILE_PATH :: "/tmp/jai-lsp.log";
 
 get_temp_path :: () -> string {
     return "/tmp/"; 
