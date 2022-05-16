@@ -143,15 +143,25 @@ handle_message :: (body : string) -> success : bool #must {
     }    
 }
 
-parse_header :: (header : string) -> s32, success : bool{
+parse_header :: (header : string) -> s32, s32, success : bool{
     split_header := split(header, ": ");
     if split_header[0] != "Content-Length" {
         log_error("Expected length message, got:\n%\n", split_header[0]);
-        return 0, false;
+        return 0, 0, false;
+    }
+
+    // According to spec, two \r\n precede the content of the message.
+    header_length : s32 = 0;
+    returns_left := 2;
+    while returns_left != 0 {
+        if header[header_length] == #char "\n" {
+            returns_left -= 1;
+        }
+        header_length += 1;
     }
 
     nb_bytes, success := parse_int(*split_header[1], s32);
-    return nb_bytes, success;
+    return nb_bytes, header_length, success;
 }
 
 shutdown_received := false;
