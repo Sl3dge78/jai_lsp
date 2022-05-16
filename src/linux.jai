@@ -1,7 +1,7 @@
 posix :: #import "POSIX";
 
 get_temp_path :: () -> string {
-    return "/tmp/"; 
+    return "/tmp/";
 }
 
 stdin_read :: (buffer : []u8) -> s32 {
@@ -15,33 +15,37 @@ translate_uri :: (uri : string) -> string {
 }
 
 wait_for_message :: () -> string, success : bool {
-    header_buffer : [1024] u8;
-    bytes_read := stdin_read(header_buffer);
-    header := to_string(header_buffer.data, bytes_read);
-    body_size, success := parse_header(header);
+    buffer : [0xFFFF] u8;
+    header_read := stdin_read(buffer);
+    header := to_string(buffer.data, header_read);
+    body_size, header_size, success := parse_header(header);
     if !success {
         return "", false;
     }
     log_verbose("Header: %\n", header);
 
     // Body
-    body_buffer : []u8 = ---;
-    body_buffer.data = talloc(body_size);
-    body_buffer.count = body_size;
+    body_buffer : []u8 = buffer;
+    body_buffer.data += header_size;
+    body_buffer.count -= header_size;
 
-    body_read : s64 = ---;
-    body_read = stdin_read(body_buffer);
+    // Sometimes, the first read will catch both the header and the content.
+    // We don't re-read in that case.
+    body_read := 0;
+    if header_size == header_read {
+        body_read = stdin_read(body_buffer);
+    }
+
     if !success {
         log_error("while reading from stdin\n", body_size, body_read);
         return "", false;
     }
-    if body_read != body_size {
+    if body_size != header_read + body_read - header_size {
         log_error("Expected % bytes, got %.\n", body_size, body_read);
         return "", false;
     }
-    
-    body := to_string(body_buffer.data, body_buffer.count);
-    
+
+    body := to_string(body_buffer.data, body_size);
     log_verbose("Body: %\n", body);
     return body, true;
 }
