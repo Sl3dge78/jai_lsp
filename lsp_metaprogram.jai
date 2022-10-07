@@ -92,13 +92,13 @@ parse_code_node :: (node : *Code_Node) {
             append(*builder, "OK|");
             append(*builder, decl.location.enclosing_load.fully_pathed_filename);
             append(*builder, "|");
-            print_integer(*builder, formatInt(l0, 10, 1, 0, ""));
+            print_integer(*builder, formatInt(l0));
             append(*builder, "|");
-            print_integer(*builder, formatInt(c0, 10, 1, 0, ""));
+            print_integer(*builder, formatInt(c0));
             append(*builder, "|");
-            print_integer(*builder, formatInt(l1, 10, 1, 0, ""));
+            print_integer(*builder, formatInt(l1));
             append(*builder, "|");
-            print_integer(*builder, formatInt(c1, 10, 1, 0, ""));
+            print_integer(*builder, formatInt(c1));
             append(*builder, "\n");
             str := builder_to_string(*builder);
             write_string(str);
