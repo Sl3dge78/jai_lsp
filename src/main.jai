@@ -32,7 +32,8 @@ start_compilation :: (request : string) -> string {
     command := tprint("jai % -- lsp_plugin % --- import_dir % meta lsp_metaprogram", BUILD_FILE, request, PLUGIN_SEARCH_PATH);
     log_verbose("Starting compilation : %\n", command);
     args := split(command, " ");
-    successfully_launched, exit_code, output_string := os_run_command(..args, capture_and_return_output = true, timeout_ms = 5000);
+
+    process_result, output_string:= run_command(..args, capture_and_return_output = true, timeout_ms = 5000);
     defer free(output_string);
     return copy_temporary_string(output_string);
 }
