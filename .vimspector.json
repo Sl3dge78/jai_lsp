@@ -1,0 +1,38 @@
+{
+  "$schema": "https://puremourning.github.io/vimspector/schema/vimspector.schema.json",
+  "adapters": {
+    "gdb": {
+      "extends": "vscode-cpptools"
+    },
+    "gdb-with-build": {
+      "extends": "gdb",
+      "variables": {
+        "buildme": {
+          "shell": "jai ${workspaceRoot}/build.jai"
+        }
+      }
+    }
+  },
+  "configurations": {
+    "Run - gdb": {
+      "adapter": "gdb-with-build",
+      "filetypes": [ "jai" ],
+      "configuration": {
+        "request": "launch",
+        "program": "${workspaceRoot}/jai_lsp",
+        "args": [ "*${args}" ],
+        "stopAtEntry": true, // can never remember what this is
+        "stopOnEntry": true
+      }
+    },
+    "Attach - gdb": {
+      "adapter": "vscode-cpptools",
+      "filetypes": [ "jai" ],
+      "configuration": {
+        "request": "attach",
+        "program": "${workspaceRoot}/jai_lsp",
+        "processId": "${PID}"
+      }
+    }
+  }
+}
