@@ -55,7 +55,10 @@ LSP_Request_Initialize :: struct {
             name : string;
             version : string;
         };
-    }
+        initializationOptions: struct {
+          build_file: string;
+        };
+    };
 }
 
 LSP_Result_Initialize :: struct {

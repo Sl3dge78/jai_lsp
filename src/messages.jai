@@ -39,6 +39,8 @@ on_initialize :: (body_str : string) -> bool {
     body, success := json_parse_string(body_str, LSP_Request_Initialize);
     if !success return false;
 
+    BUILD_FILE = body.params.initializationOptions.build_file;
+
     to_send : LSP_Result_Initialize;
     success = send_lsp_result(body.id, to_send);
     return true;

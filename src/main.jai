@@ -177,11 +177,6 @@ Arguments :: struct {
 
 main :: () {
     success, args, is_set := Command_Line.parse_arguments(Arguments);
-    if !success || !is_set.build_file {
-        print("Please provide a build file as argument\n");
-        return;
-    }
-
     if !is_set.log_file {
       args.log_file = join( get_temp_path(), "jai_lsp.log" );
     }
@@ -201,10 +196,13 @@ main :: () {
     PLUGIN_SEARCH_PATH = path_to_string(our_path, our_path.words.count - 1);
     defer free(PLUGIN_SEARCH_PATH);
     
-    if is_absolute_path(args.build_file) {
-        BUILD_FILE = args.build_file;
-    } else {
-        BUILD_FILE = sprint("%/%", get_working_directory(), args.build_file);
+    // Can be overridden by the initializationOptions on initialize request
+    if (is_set.build_file) {
+      if is_absolute_path(args.build_file) {
+          BUILD_FILE = args.build_file;
+      } else {
+          BUILD_FILE = sprint("%/%", get_working_directory(), args.build_file);
+      }
     }
 
     log("Jai lsp starting up in %\n", get_working_directory());
