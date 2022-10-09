@@ -33,6 +33,15 @@
         "program": "${workspaceRoot}/jai_lsp",
         "processId": "${PID}"
       }
+    },
+    "Attach - lldb": {
+      "adapter": "CodeLLDB",
+      "filetypes": [ "jai" ],
+      "configuration": {
+        "request": "attach",
+        "program": "${workspaceRoot}/jai_lsp",
+        "pid": "${PID}"
+      }
     }
   }
 }
