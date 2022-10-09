@@ -40,6 +40,7 @@ on_initialize :: (body_str : string) -> bool {
     if !success return false;
 
     BUILD_FILE = body.params.initializationOptions.build_file;
+    BUILD_ARGS = array_copy( body.params.initializationOptions.build_args );
 
     to_send : LSP_Result_Initialize;
     success = send_lsp_result(body.id, to_send);

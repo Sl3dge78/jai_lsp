@@ -14,6 +14,7 @@ Command_Line :: #import "Command_Line";
     #load "windows.jai";  
 }
 
+#load "util.jai";
 #load "request_types.jai";
 #load "messages.jai";
 
@@ -26,21 +27,32 @@ VERSION :: "0.2.0";
 
 PLUGIN_SEARCH_PATH : string;
 BUILD_FILE : string;
+BUILD_ARGS : [] string;
 LOGGING_FILE_PATH : string;
 
-start_compilation :: (request : string) -> string {
-    command := tprint("jai % -- lsp_plugin % --- import_dir % meta lsp_metaprogram", BUILD_FILE, request, PLUGIN_SEARCH_PATH);
-    log_verbose("Starting compilation : %\n", command);
-    args := split(command, " ");
+start_compilation :: (request : []string) -> string {
+    command : [..]string;
+    command.allocator = temp;
+    array_reserve( *command, 10 + BUILD_ARGS.count + request.count );
 
-    process_result, output_string:= run_command(..args, capture_and_return_output = true, timeout_ms = 5000);
+    array_add( *command, "jai" );
+    array_add( *command, BUILD_FILE );
+    array_extend( *command, .[ "--", "lsp_plugin" ] );
+    array_extend( *command, request );
+    array_extend( *command, .[ "---", "import_dir" ] );
+    array_add( *command, PLUGIN_SEARCH_PATH );
+    array_extend( *command, BUILD_ARGS );
+    array_extend( *command, .[ "meta", "lsp_metaprogram" ] );
+
+    process_result, output_string:= run_command(..command, capture_and_return_output = true, timeout_ms = 5000);
     defer free(output_string);
     return copy_temporary_string(output_string);
 }
 
 get_definition_location :: (file_path : string, line : int, character : int) -> success : bool, loc : LSP_Location = .{} {
     // Now we need to compile the project with our metaprogram so that we can fetch the definition through its stdout.
-    command := tprint("-locate % % %", file_path, line, character);
+    command := array_of( "-locate", file_path, tprint("%", line), tprint("%",character) );
+
     log_verbose("%\n", command);
     compile_result := start_compilation(command);
     log_verbose("COMPILE:%\n", compile_result);
@@ -79,7 +91,7 @@ get_definition_location :: (file_path : string, line : int, character : int) -> 
                 }
                 
                 if(loc[2] == "0" && loc[3] == "0" && loc[4] == "0" && loc[5] == "0") { // Basic types redirect to Preload.jai 0,0,0,0
-                log_verbose("Basic type\n");
+                    log_verbose("Basic type\n");
                     return false, .{};
                 }
                 result_location : LSP_Location;

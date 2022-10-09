@@ -57,6 +57,7 @@ LSP_Request_Initialize :: struct {
         };
         initializationOptions: struct {
           build_file: string;
+          build_args: []string;
         };
     };
 }

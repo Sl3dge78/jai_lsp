@@ -501,6 +501,10 @@ default_metaprogram :: () {
     for plugins if it.finish   it.finish  (it);
     for plugins if it.shutdown it.shutdown(it);
     
+    //
+    // Disable all the output and other stuff; we're not really compiling, just
+    // parsing
+    //
     {
         set_build_options_dc(.{do_output=false, write_added_strings=false});
     }
