@@ -1,11 +1,20 @@
 {
   "$schema": "https://puremourning.github.io/vimspector/schema/vimspector.schema.json",
   "adapters": {
-    "gdb": {
-      "extends": "vscode-cpptools"
-    },
     "gdb-with-build": {
       "extends": "gdb",
+      "variables": {
+        "buildme": {
+          "shell": "jai ${workspaceRoot}/build.jai"
+        }
+      }
+    },
+    "codelldb-with-build": {
+      "extends": "CodeLLDB",
+      "command": [
+        "$HOME/Development/vimspector/CodeLLDB/build-linux/adapter/codelldb",
+        "--port", "${unusedLocalPort}"
+      ],
       "variables": {
         "buildme": {
           "shell": "jai ${workspaceRoot}/build.jai"
@@ -19,27 +28,37 @@
       "filetypes": [ "jai" ],
       "configuration": {
         "request": "launch",
-        "program": "${workspaceRoot}/jai_lsp",
+        "program": "${workspaceRoot}/${binaryName}",
         "args": [ "*${args}" ],
-        "stopAtEntry": true, // can never remember what this is
+        "stopAtEntry": true,
         "stopOnEntry": true
       }
+    },
+    "Run - lldb": {
+      "extends": "Run - gdb",
+      "filetypes": [ "jai" ],
+      "adapter": "codelldb-with-build"
     },
     "Attach - gdb": {
       "adapter": "vscode-cpptools",
       "filetypes": [ "jai" ],
       "configuration": {
         "request": "attach",
-        "program": "${workspaceRoot}/jai_lsp",
+        "program": "${workspaceRoot}/binaryName}",
         "processId": "${PID}"
       }
     },
     "Attach - lldb": {
-      "adapter": "CodeLLDB",
+      "extends": "Attach - gdb",
       "filetypes": [ "jai" ],
+      "adapter": {
+        "extends": "CodeLLDB",
+        "command": [
+          "$HOME/Development/vimspector/CodeLLDB/build-linux/adapter/codelldb",
+          "--port", "${unusedLocalPort}"
+        ]
+      },
       "configuration": {
-        "request": "attach",
-        "program": "${workspaceRoot}/jai_lsp",
         "pid": "${PID}"
       }
     }
