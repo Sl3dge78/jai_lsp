@@ -27,22 +27,31 @@ VERSION :: "0.2.0";
 
 PLUGIN_SEARCH_PATH : string;
 BUILD_FILE : string;
-BUILD_ARGS : [] string;
+IMPORT_DIRS : [] string;
 LOGGING_FILE_PATH : string;
+
+NO_OUTPUT_PROGRAM :: "{ c :: #import \"Compiler\"; c.set_build_options_dc( .{ do_output=false } ); }";
 
 start_compilation :: (request : []string) -> string {
     command : [..]string;
     command.allocator = temp;
-    array_reserve( *command, 10 + BUILD_ARGS.count + request.count );
+    array_reserve( *command, 12 + 2*IMPORT_DIRS.count + request.count );
 
-    array_add( *command, "jai" );
-    array_add( *command, BUILD_FILE );
-    array_extend( *command, .[ "--", "lsp_plugin" ] );
+    array_extend( *command,
+                  array_of( "jai",
+                            BUILD_FILE,
+                            "-plug", "lsp_metaprogram",
+                            "-run", NO_OUTPUT_PROGRAM,
+                            "-lsp_plugin" ) );
     array_extend( *command, request );
-    array_extend( *command, .[ "---", "import_dir" ] );
-    array_add( *command, PLUGIN_SEARCH_PATH );
-    array_extend( *command, BUILD_ARGS );
-    array_extend( *command, .[ "meta", "lsp_metaprogram" ] );
+    array_extend( *command, array_of( "---",
+                                      "import_dir", PLUGIN_SEARCH_PATH ) );
+
+    for IMPORT_DIRS {
+      array_extend( *command, array_of( "import_dir", it ) );
+    }
+
+    log_verbose( "Execute: %\n", command );
 
     process_result, output_string:= run_command(..command, capture_and_return_output = true, timeout_ms = 5000);
     defer free(output_string);
