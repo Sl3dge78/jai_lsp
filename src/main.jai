@@ -20,7 +20,6 @@ Command_Line :: #import "Command_Line";
 #load "logging.jai";
 
 VERSION :: "0.2.0";
-DEBUG :: false;
 
 // --------
 // Compiling target program
@@ -103,11 +102,14 @@ get_definition_location :: (file_path : string, line : int, character : int) -> 
 // --------
 // Logging
 
-init_logger :: () {
-    LOGGING_FILE_PATH = join(get_temp_path(), "jai_lsp.log");
+init_logger :: ( log_file: string, log_level: Log_Level ) {
+    LOGGING_FILE_PATH = log_file;
     //file := file_open(LOGGING_FILE_PATH, true, keep_existing_content = false); // Create or empty logging file
     //file_close(*file);
     context.logger = file_logger;
+    context.log_level = log_level;
+
+    log( "Logging initialised at level % to %\n", log_level, log_file );
 }
 
 // --------
@@ -168,23 +170,36 @@ parse_header :: (header : string) -> s32, s32, success : bool{
 shutdown_received := false;
 
 Arguments :: struct {
-    build_file : string; 
+    build_file : string;
+    log_file   : string;
+    log_level  : string;
 }
 
 main :: () {
-    if DEBUG {
-        context.log_level = .VERBOSE;
+    success, args, is_set := Command_Line.parse_arguments(Arguments);
+    if !success || !is_set.build_file {
+        print("Please provide a build file as argument\n");
+        return;
     }
 
-    init_logger();
+    if !is_set.log_file {
+      args.log_file = join( get_temp_path(), "jai_lsp.log" );
+    }
+
+    log_level : Log_Level = .NORMAL;
+    if is_set.log_level {
+      if args.log_level == {
+        case "NORMAL"; log_level = .NORMAL;
+        case "VERBOSE"; log_level = .VERBOSE;
+        case "VERY_VERBOSE"; log_level = .VERY_VERBOSE;
+      }
+    }
+    
+    init_logger(args.log_file, log_level);
+
     our_path := parse_path(get_path_of_running_executable());
     PLUGIN_SEARCH_PATH = path_to_string(our_path, our_path.words.count - 1);
     defer free(PLUGIN_SEARCH_PATH);
-    
-    success, args, is_set := Command_Line.parse_arguments(Arguments);
-    if !success || !is_set.build_file {
-        print("Please provide a build file as argument");
-    }
     
     if is_absolute_path(args.build_file) {
         BUILD_FILE = args.build_file;
