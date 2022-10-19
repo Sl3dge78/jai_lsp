@@ -236,5 +236,5 @@ main2 :: () {
     BUILD_FILE = "build.jai";
     our_path := parse_path(get_path_of_running_executable());
     PLUGIN_SEARCH_PATH = path_to_string(our_path, our_path.words.count - 1);
-    ok, loc := get_definition_location("/home/sl3dge/work/zelda/src/main.jai", 9, 37);
+    ok, loc := get_definition_location("/home/sl3dge/work/jai_lsp/src/main.jai", 239, 24);
 }
