@@ -14,7 +14,6 @@ Command_Line :: #import "Command_Line";
     #load "windows.jai";  
 }
 
-#load "util.jai";
 #load "request_types.jai";
 #load "messages.jai";
 
@@ -27,41 +26,21 @@ VERSION :: "0.2.0";
 
 PLUGIN_SEARCH_PATH : string;
 BUILD_FILE : string;
-IMPORT_DIRS : [] string;
 LOGGING_FILE_PATH : string;
 
-NO_OUTPUT_PROGRAM :: "{ c :: #import \"Compiler\"; c.set_build_options_dc( .{ do_output=false } ); }";
+start_compilation :: (request : string) -> string {
+    command := tprint("jai % -- lsp_plugin % --- import_dir % meta lsp_metaprogram", BUILD_FILE, request, PLUGIN_SEARCH_PATH);
+    log_verbose("Starting compilation : %\n", command);
+    args := split(command, " ");
 
-start_compilation :: (request : []string) -> string {
-    command : [..]string;
-    command.allocator = temp;
-    array_reserve( *command, 12 + 2*IMPORT_DIRS.count + request.count );
-
-    array_extend( *command,
-                  array_of( "jai",
-                            BUILD_FILE,
-                            "-plug", "lsp_metaprogram",
-                            "-run", NO_OUTPUT_PROGRAM,
-                            "-lsp_plugin" ) );
-    array_extend( *command, request );
-    array_extend( *command, array_of( "---",
-                                      "import_dir", PLUGIN_SEARCH_PATH ) );
-
-    for IMPORT_DIRS {
-      array_extend( *command, array_of( "import_dir", it ) );
-    }
-
-    log_verbose( "Execute: %\n", command );
-
-    process_result, output_string:= run_command(..command, capture_and_return_output = true, timeout_ms = 5000);
+    process_result, output_string:= run_command(..args, capture_and_return_output = true, timeout_ms = 5000);
     defer free(output_string);
     return copy_temporary_string(output_string);
 }
 
 get_definition_location :: (file_path : string, line : int, character : int) -> success : bool, loc : LSP_Location = .{} {
     // Now we need to compile the project with our metaprogram so that we can fetch the definition through its stdout.
-    command := array_of( "-locate", file_path, tprint("%", line), tprint("%",character) );
-
+    command := tprint("-locate % % %", file_path, line, character);
     log_verbose("%\n", command);
     compile_result := start_compilation(command);
     log_verbose("COMPILE:%\n", compile_result);
@@ -100,7 +79,7 @@ get_definition_location :: (file_path : string, line : int, character : int) -> 
                 }
                 
                 if(loc[2] == "0" && loc[3] == "0" && loc[4] == "0" && loc[5] == "0") { // Basic types redirect to Preload.jai 0,0,0,0
-                    log_verbose("Basic type\n");
+                log_verbose("Basic type\n");
                     return false, .{};
                 }
                 result_location : LSP_Location;
@@ -198,6 +177,11 @@ Arguments :: struct {
 
 main :: () {
     success, args, is_set := Command_Line.parse_arguments(Arguments);
+    if !success || !is_set.build_file {
+        print("Please provide a build file as argument\n");
+        return;
+    }
+
     if !is_set.log_file {
       args.log_file = join( get_temp_path(), "jai_lsp.log" );
     }
@@ -217,13 +201,10 @@ main :: () {
     PLUGIN_SEARCH_PATH = path_to_string(our_path, our_path.words.count - 1);
     defer free(PLUGIN_SEARCH_PATH);
     
-    // Can be overridden by the initializationOptions on initialize request
-    if (is_set.build_file) {
-      if is_absolute_path(args.build_file) {
-          BUILD_FILE = args.build_file;
-      } else {
-          BUILD_FILE = sprint("%/%", get_working_directory(), args.build_file);
-      }
+    if is_absolute_path(args.build_file) {
+        BUILD_FILE = args.build_file;
+    } else {
+        BUILD_FILE = sprint("%/%", get_working_directory(), args.build_file);
     }
 
     log("Jai lsp starting up in %\n", get_working_directory());

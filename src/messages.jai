@@ -39,11 +39,6 @@ on_initialize :: (body_str : string) -> bool {
     body, success := json_parse_string(body_str, LSP_Request_Initialize);
     if !success return false;
 
-    // TODO: Just put the initializationOptions in globals, then use that rather
-    // than all this copying
-    BUILD_FILE = body.params.initializationOptions.build_file;
-    IMPORT_DIRS = array_copy( body.params.initializationOptions.import_dirs );
-
     to_send : LSP_Result_Initialize;
     success = send_lsp_result(body.id, to_send);
     return true;
