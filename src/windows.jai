@@ -33,7 +33,7 @@ wait_for_message :: () -> string, success : bool {
     stdin.handle = win32.GetStdHandle(win32.STD_INPUT_HANDLE);
 
     // Header
-    header_buffer : [1024] u8;
+    header_buffer : [0xFFFF] u8;
     bytes_read := file_read_line(stdin, header_buffer);
     header := to_string(header_buffer.data, bytes_read);
     body_size, success := parse_header(header);
@@ -49,10 +49,9 @@ wait_for_message :: () -> string, success : bool {
     body_buffer : []u8 = ---;
     body_buffer.data = talloc(body_size);
     body_buffer.count = body_size;
-
-    body_read : s64 = ---;
-    success, body_read = file_read(stdin, body_buffer.data, body_buffer.count);
-    if !success {
+  
+    success2, body_read := file_read(stdin, body_buffer.data, body_buffer.count);
+    if !success2 {
         log_error("while reading from stdin\n", body_size, body_read);
         return "", false;
     }

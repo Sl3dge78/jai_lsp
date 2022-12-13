@@ -29,7 +29,7 @@ BUILD_FILE : string;
 LOGGING_FILE_PATH : string;
 
 start_compilation :: (request : string) -> string {
-    command := tprint("jai % -- lsp_plugin % --- import_dir % meta lsp_metaprogram", BUILD_FILE, request, PLUGIN_SEARCH_PATH);
+    command := tprint("jai % -plug lsp_plugin % --- import_dir % meta lsp_metaprogram", BUILD_FILE, request, PLUGIN_SEARCH_PATH);
     log_verbose("Starting compilation : %\n", command);
     args := split(command, " ");
 
@@ -161,6 +161,9 @@ parse_header :: (header : string) -> s32, s32, success : bool{
             returns_left -= 1;
         }
         header_length += 1;
+        if header_length >= header.count {
+            return 0, 0, false;
+        }
     }
 
     nb_bytes, success := parse_int(*split_header[1], s32);
