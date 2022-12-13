@@ -29,7 +29,7 @@ BUILD_FILE : string;
 LOGGING_FILE_PATH : string;
 
 start_compilation :: (request : string) -> string {
-    command := tprint("jai % -plug lsp_plugin % --- import_dir % meta lsp_metaprogram", BUILD_FILE, request, PLUGIN_SEARCH_PATH);
+    command := tprint("jai % -plug lsp_plugin -- % --- import_dir % meta lsp_metaprogram", BUILD_FILE, request, PLUGIN_SEARCH_PATH);
     log_verbose("Starting compilation : %\n", command);
     args := split(command, " ");
 

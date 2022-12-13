@@ -62,6 +62,22 @@ Here's an example config file `:CocConfig`:
 }
 ```
 
+### SUBLIME
+Copy `jai_lsp` somewhere and add it to your path.
+Then add the following to `LSP.sublime-settings`
+```json
+{
+    "clients": {
+        "jai": {
+            "enabled": true,
+            "command": ["jai_lsp", "-build_file"],
+            "selector": "source.jai",     
+        }
+    }
+}
+
+```
+
 ### Other IDEs
 
 
